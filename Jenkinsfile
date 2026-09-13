@@ -20,4 +20,10 @@ pipeline {
             }
         }
     }
+
+    post {
+        always {
+            junit 'newman-reports/junit.xml'
+        }
+    }
 }
