@@ -29,7 +29,7 @@ pipeline {
             publishHTML(target: [
                 reportDir: 'newman-reports',
                 reportFiles: 'newman-report.html',
-                reportName: 'Newman API Test Report',
+                reportName: 'Newman API Collection Test Report',
                 keepAll: true,
                 alwaysLinkToLastBuild: true,
                 allowMissing: false
