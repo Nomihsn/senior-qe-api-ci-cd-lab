@@ -1,0 +1,497 @@
+{
+  "info": {
+    "_postman_id": "f8c0b643-a9aa-47f1-80c6-454238ee9bce",
+    "name": "Senior QE API Interview Lab",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "25942183"
+  },
+  "item": [
+    {
+      "name": "getRequest",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": ""
+        },
+        "url": {
+          "raw": "{{baseUrl}}/users",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "practice2",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://jsonplaceholder.typicode.com/users?_start=0&_limit=3",
+          "protocol": "https",
+          "host": [
+            "jsonplaceholder",
+            "typicode",
+            "com"
+          ],
+          "path": [
+            "users"
+          ],
+          "query": [
+            {
+              "key": "_start",
+              "value": "0"
+            },
+            {
+              "key": "_limit",
+              "value": "3"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Test1",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const response = pm.response.json();\r",
+              "\r",
+              "\r",
+              "pm.test(\"Status code is 200\", function () {\r",
+              "\r",
+              "    pm.response.to.have.status(200);\r",
+              "})\r",
+              "\r",
+              "pm.test(\"User Id Is:\", function(){\r",
+              "    pm.expect(response.id).to.eql(1);\r",
+              "})\r",
+              "\r",
+              "pm.test(\"User Name Is:\", function(){\r",
+              "    pm.expect(response.name).to.eql(\"Leanne Graham\");\r",
+              "})\r",
+              "\r",
+              "pm.test(\"Email field\", function(){\r",
+              "\r",
+              "    pm.expect(response).to.have.property(\"email\");\r",
+              "})\r",
+              "\r",
+              "pm.test(function(){\r",
+              "    pm.expect(typeof response.id).to.eql(\"number\");\r",
+              "    pm.expect(Number.isInteger(response.id)).to.be.true;\r",
+              "})\r",
+              "\r",
+              "\r",
+              "pm.test(function(){\r",
+              "    pm.expect(typeof response.name).to.eql(\"string\");\r",
+              "})\r",
+              "\r",
+              "pm.test(function(){\r",
+              "\r",
+              "    pm.expect(typeof response.email).to.eql(\"string\");\r",
+              "})\r",
+              "\r",
+              "pm.test(function(){\r",
+              "\r",
+              "    pm.expect(typeof response.address).to.eql(\"object\")\r",
+              "})\r",
+              "\r",
+              "pm.test(function(){\r",
+              "\r",
+              "    pm.expect(typeof response.address.city).to.eql(\"string\")\r",
+              "})"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://jsonplaceholder.typicode.com/users/1",
+          "protocol": "https",
+          "host": [
+            "jsonplaceholder",
+            "typicode",
+            "com"
+          ],
+          "path": [
+            "users",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "schemaValidation",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "\r",
+              "const response = pm.response.json();\r",
+              "\r",
+              "const schema = {\r",
+              "    type: \"object\",\r",
+              "    required: [\"id\", \"name\", \"username\", \"email\", \"address\"],\r",
+              "    properties: {\r",
+              "        id: {\r",
+              "            type: \"integer\"\r",
+              "        },\r",
+              "        name: {\r",
+              "            type: \"string\"\r",
+              "        },\r",
+              "        username: {\r",
+              "            type: \"string\"\r",
+              "        },\r",
+              "        email: {\r",
+              "            type: \"string\"\r",
+              "        },\r",
+              "        address: {\r",
+              "            type: \"object\"\r",
+              "        }\r",
+              "    }\r",
+              "};\r",
+              "\r",
+              "pm.test(\"Response matches schema\",function(){\r",
+              "\r",
+              "    pm.response.to.have.jsonSchema(schema);\r",
+              "})"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/users/1",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "creatingUsers",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const response =  pm.response.json();\r",
+              "\r",
+              "pm.environment.set(\"userId\", response.id);"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"id\": 101,\r\n    \"name\": \"Noman\",\r\n    \"email\": \"noman@test.com\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/users",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "putRequest",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const response = pm.response.json();\r",
+              "\r",
+              "pm.test(\"Status code is 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"User ID is 10\", function () {\r",
+              "    pm.expect(response.id).to.eql(10);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"User name is updated\", function () {\r",
+              "    pm.expect(response.name).to.eql(\"Noman Ahsan\");\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Username is correct\", function () {\r",
+              "    pm.expect(response.username).to.eql(\"noman\");\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Email is correct\", function () {\r",
+              "    pm.expect(response.email).to.eql(\"noman@test.com\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"id\": 10,\r\n    \"name\": \"Noman Ahsan\",\r\n    \"username\": \"noman\",\r\n    \"email\": \"noman@test.com\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/users/10",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            "10"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "deleteRequest",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const response = pm.response.json();\r",
+              "\r",
+              "pm.test(\"Status Code is 200\", function(){\r",
+              "\r",
+              "    pm.response.to.have.status(200);\r",
+              "\r",
+              "})\r",
+              "\r",
+              "pm.test(\"Response body is empty\", function(){\r",
+              "    pm.expect(response).to.eql({});\r",
+              "})"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer test-token",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/users/10",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            "10"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "createUserPositive",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const response = pm.response.json();\r",
+              "\r",
+              "pm.test(\"Status code is 201\", function () {\r",
+              "    pm.response.to.have.status(201);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Response contains ID\", function () {\r",
+              "    pm.expect(response).to.have.property(\"id\");\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Order ID is a positive integer\", function () {\r",
+              "    pm.expect(response).to.have.property(\"id\");\r",
+              "    pm.expect(response.id).to.be.a(\"number\");\r",
+              "    pm.expect(Number.isInteger(response.id)).to.be.true;\r",
+              "    pm.expect(response.id).to.be.greaterThan(0);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Status is a string\", function () {\r",
+              "    pm.expect(typeof response.status).to.eql(\"string\");\r",
+              "});\r",
+              "\r",
+              "pm.test(\"User ID is 10\", function () {\r",
+              "    pm.expect(response.userId).to.eql(10);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Product ID is 1001\", function () {\r",
+              "    pm.expect(response.productId).to.eql(1001);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Quantity is 2\", function () {\r",
+              "    pm.expect(response.quantity).to.eql(2);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Status is CREATED\", function () {\r",
+              "    pm.expect(response.status).to.eql(\"CREATED\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"userId\": 10,\r\n  \"productId\": 1001,\r\n  \"quantity\": 2\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/orders",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "orderCreateNegative",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"user ID is required\", function(){\r",
+              "\r",
+              "    pm.response.to.have.status(400);\r",
+              "    pm.expect(response).to.have.property(\"error\");\r",
+              "    pm.expect(response.error).to.eql(\"user ID is required\");\r",
+              "})\r",
+              "\r",
+              "pm.test(\"quantity must be between 1 and 10\", function(){\r",
+              "\r",
+              "    pm.response.to.have.status(400);\r",
+              "    pm.expect(response).to.have.property(\"error\");\r",
+              "    pm.expect(response.error).to.eql(\"quantity must be between 1 and 10\");\r",
+              "})\r",
+              "\r",
+              "pm.test(\"Authencation required\", function () {\r",
+              "\r",
+              "    pm.response.to.have.status(401);\r",
+              "    pm.expect(response).to.have.property(\"error\");\r",
+              "    pm.expect(response.error).to.eql(\"Authentication required\")\r",
+              "    })\r",
+              "\r",
+              "  "
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"productId\": 1001,\r\n  \"quantity\": 2\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/orders",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
