@@ -8,10 +8,12 @@ pipeline {
             }
         }
 
-        stage('Check Node and Newman') {
+        stage('Run API Tests') {
             steps {
-                bat 'node --version'
-                bat 'newman --version'
+                bat '''
+                    newman run "postman\\Senior QE API Interview Lab.postman_collection.json" ^
+                    -e "postman\\API-QA.postman_environment.json"
+                '''
             }
         }
     }
