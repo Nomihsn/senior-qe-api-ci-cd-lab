@@ -25,6 +25,15 @@ pipeline {
     post {
         always {
             junit 'newman-reports/junit.xml'
+
+            publishHTML(target: [
+                reportDir: 'newman-reports',
+                reportFiles: 'newman-report.html',
+                reportName: 'Newman API Test Report',
+                keepAll: true,
+                alwaysLinkToLastBuild: true,
+                allowMissing: false
+            ])
         }
     }
 }
