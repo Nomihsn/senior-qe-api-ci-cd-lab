@@ -1,3 +1,4 @@
+
 pipeline {
 
     agent any
@@ -82,6 +83,23 @@ pipeline {
 
                             Write-Host "QMetry upload URL received successfully."
                             Write-Host "QMetry tracking ID received successfully."
+
+                            # Print only URL parameter names.
+                            # Values are intentionally not printed because the URL
+                            # contains temporary AWS credentials/tokens.
+                            Write-Host ""
+                            Write-Host "QMetry upload URL parameter names:"
+
+                            $uri = [System.Uri]$response.url
+
+                            $uri.Query.TrimStart('?') -split '&' |
+                                ForEach-Object {
+                                    ($_ -split '=')[0]
+                                } |
+                                Sort-Object -Unique |
+                                ForEach-Object {
+                                    Write-Host " - $_"
+                                }
                         }
                         catch {
                             Write-Host "=========================================="
@@ -122,17 +140,21 @@ pipeline {
 
                     echo Uploading JUnit result to QMetry...
 
-                    curl.exe --request PUT ^
+                    curl.exe --silent --show-error --request PUT ^
                         --header "Content-Type: multipart/form-data" ^
                         --upload-file "newman-reports\\junit.xml" ^
                         --output "newman-reports\\qmetry-upload-response.txt" ^
-                        --write-out "HTTP_STATUS=%%{http_code}" ^
-                        "%QMETRY_UPLOAD_URL%"
+                        --write-out "%%{http_code}" ^
+                        "%QMETRY_UPLOAD_URL%" > "newman-reports\\qmetry-http-status.txt"
+
+                    set /p QMETRY_HTTP_STATUS=<newman-reports\\qmetry-http-status.txt
 
                     echo.
                     echo ==========================================
                     echo QMetry Upload Response
                     echo ==========================================
+
+                    echo HTTP_STATUS=%QMETRY_HTTP_STATUS%
 
                     type "newman-reports\\qmetry-upload-response.txt"
 
@@ -141,9 +163,7 @@ pipeline {
                     echo Checking upload status
                     echo ==========================================
 
-                    findstr /C:"HTTP_STATUS=200" "newman-reports\\qmetry-upload-response.txt" >nul
-
-                    if errorlevel 1 (
+                    if not "%QMETRY_HTTP_STATUS%"=="200" (
                         echo QMetry JUnit upload failed.
                         exit /b 1
                     )
@@ -243,6 +263,7 @@ pipeline {
 
     post {
         always {
+
             junit 'newman-reports/junit.xml'
 
             publishHTML(target: [
@@ -255,7 +276,12 @@ pipeline {
             ])
 
             archiveArtifacts(
-                artifacts: 'newman-reports/qmetry-upload-response.json,newman-reports/qmetry-upload-response.txt,newman-reports/qmetry-import-status.json',
+                artifacts: '''
+                    newman-reports/qmetry-upload-response.json,
+                    newman-reports/qmetry-upload-response.txt,
+                    newman-reports/qmetry-http-status.txt,
+                    newman-reports/qmetry-import-status.json
+                ''',
                 allowEmptyArchive: true
             )
         }
