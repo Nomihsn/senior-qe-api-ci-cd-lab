@@ -16,7 +16,6 @@ pipeline {
 
         stage('Run API Tests') {
             steps {
-
                 bat '''
                     if not exist "newman-reports" mkdir "newman-reports"
 
@@ -31,14 +30,12 @@ pipeline {
 
         stage('Request QMetry Upload URL') {
             steps {
-
                 withCredentials([
                     string(
                         credentialsId: 'qmetry-api-key',
                         variable: 'QMETRY_API_KEY'
                     )
                 ]) {
-
                     powershell '''
                         $body = @{
                             format = "junit"
@@ -51,7 +48,6 @@ pipeline {
                         Write-Host "Requesting QMetry upload URL..."
 
                         try {
-
                             $response = Invoke-RestMethod `
                                 -Uri $env:QMETRY_URL `
                                 -Method POST `
@@ -87,20 +83,15 @@ pipeline {
                             Write-Host "QMetry upload URL received successfully."
                             Write-Host "QMetry tracking ID received successfully."
                         }
-
                         catch {
-
                             Write-Host "=========================================="
                             Write-Host "QMetry API returned an error"
                             Write-Host "=========================================="
 
-                            Write-Host "HTTP Error:"
                             Write-Host $_.Exception.Message
 
                             if ($_.Exception.Response) {
-
                                 try {
-
                                     $reader = New-Object `
                                         System.IO.StreamReader(
                                             $_.Exception.Response.GetResponseStream()
@@ -111,11 +102,8 @@ pipeline {
                                     Write-Host ""
                                     Write-Host "QMetry Response Body:"
                                     Write-Host $errorBody
-                                    Write-Host ""
-
                                 }
                                 catch {
-
                                     Write-Host "Could not read QMetry error response body."
                                 }
                             }
@@ -129,7 +117,6 @@ pipeline {
 
         stage('Upload JUnit Result to QMetry') {
             steps {
-
                 bat '''
                     set /p QMETRY_UPLOAD_URL=<newman-reports\\qmetry-upload-url.txt
 
@@ -151,22 +138,29 @@ pipeline {
 
                     echo.
                     echo ==========================================
-                    echo Upload completed
+                    echo Checking upload status
                     echo ==========================================
+
+                    findstr /C:"HTTP_STATUS=200" "newman-reports\\qmetry-upload-response.txt" >nul
+
+                    if errorlevel 1 (
+                        echo QMetry JUnit upload failed.
+                        exit /b 1
+                    )
+
+                    echo QMetry JUnit upload completed successfully.
                 '''
             }
         }
 
         stage('Check QMetry Import Status') {
             steps {
-
                 withCredentials([
                     string(
                         credentialsId: 'qmetry-api-key',
                         variable: 'QMETRY_API_KEY'
                     )
                 ]) {
-
                     powershell '''
                         $trackingId = (
                             Get-Content `
@@ -187,11 +181,9 @@ pipeline {
                         $attempt = 0
 
                         do {
-
                             $attempt++
 
                             try {
-
                                 $response = Invoke-RestMethod `
                                     -Uri $trackingUrl `
                                     -Method GET `
@@ -210,16 +202,13 @@ pipeline {
                                     -Encoding utf8
 
                                 if ($response.importStatus -eq "SUCCESS") {
-
                                     Write-Host "=========================================="
                                     Write-Host "QMetry import completed successfully."
                                     Write-Host "=========================================="
-
                                     exit 0
                                 }
 
                                 if ($response.importStatus -eq "FAILED") {
-
                                     Write-Host "=========================================="
                                     Write-Host "QMetry import FAILED."
                                     Write-Host "=========================================="
@@ -231,14 +220,10 @@ pipeline {
 
                                     exit 1
                                 }
-
                             }
-
                             catch {
-
                                 Write-Host "Error while checking QMetry status:"
                                 Write-Host $_.Exception.Message
-
                                 exit 1
                             }
 
@@ -246,12 +231,9 @@ pipeline {
 
                             Start-Sleep -Seconds 5
 
-                        }
-                        while ($attempt -lt $maxAttempts)
+                        } while ($attempt -lt $maxAttempts)
 
-                        Write-Error `
-                            "QMetry import did not complete within the expected time."
-
+                        Write-Error "QMetry import did not complete within the expected time."
                         exit 1
                     '''
                 }
@@ -260,9 +242,7 @@ pipeline {
     }
 
     post {
-
         always {
-
             junit 'newman-reports/junit.xml'
 
             publishHTML(target: [
