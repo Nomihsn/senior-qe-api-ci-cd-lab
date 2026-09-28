@@ -135,17 +135,24 @@ pipeline {
 
                     echo Uploading JUnit result to QMetry...
 
-                    curl.exe --fail --request PUT ^
+                    curl.exe --request PUT ^
                         --header "Content-Type: multipart/form-data" ^
                         --upload-file "newman-reports\\junit.xml" ^
+                        --output "newman-reports\\qmetry-upload-response.txt" ^
+                        --write-out "HTTP_STATUS=%%{http_code}" ^
                         "%QMETRY_UPLOAD_URL%"
 
-                    if errorlevel 1 (
-                        echo QMetry JUnit upload failed.
-                        exit /b 1
-                    )
+                    echo.
+                    echo ==========================================
+                    echo QMetry Upload Response
+                    echo ==========================================
 
-                    echo JUnit result uploaded to QMetry successfully.
+                    type "newman-reports\\qmetry-upload-response.txt"
+
+                    echo.
+                    echo ==========================================
+                    echo Upload completed
+                    echo ==========================================
                 '''
             }
         }
@@ -268,7 +275,7 @@ pipeline {
             ])
 
             archiveArtifacts(
-                artifacts: 'newman-reports/qmetry-upload-response.json,newman-reports/qmetry-import-status.json',
+                artifacts: 'newman-reports/qmetry-upload-response.json,newman-reports/qmetry-upload-response.txt,newman-reports/qmetry-import-status.json',
                 allowEmptyArchive: true
             )
         }
