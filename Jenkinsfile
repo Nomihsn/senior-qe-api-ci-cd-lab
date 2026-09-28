@@ -16,6 +16,7 @@ pipeline {
 
         stage('Run API Tests') {
             steps {
+
                 bat '''
                     if not exist "newman-reports" mkdir "newman-reports"
 
@@ -41,11 +42,6 @@ pipeline {
                     powershell '''
                         $body = @{
                             format = "junit"
-                            environment = "QA"
-                            build = "$env:BUILD_NUMBER"
-                            isZip = $false
-                            attachFile = $false
-                            matchTestSteps = $false
                         } | ConvertTo-Json -Compress
 
                         $headers = @{
@@ -54,34 +50,78 @@ pipeline {
 
                         Write-Host "Requesting QMetry upload URL..."
 
-                        $response = Invoke-RestMethod `
-                            -Uri $env:QMETRY_URL `
-                            -Method POST `
-                            -Headers $headers `
-                            -ContentType "application/json" `
-                            -Body $body
+                        try {
 
-                        if (-not $response.url) {
-                            Write-Error "QMetry did not return an upload URL."
-                            exit 1
+                            $response = Invoke-RestMethod `
+                                -Uri $env:QMETRY_URL `
+                                -Method POST `
+                                -Headers $headers `
+                                -ContentType "application/json" `
+                                -Body $body
+
+                            if (-not $response.url) {
+                                Write-Error "QMetry did not return an upload URL."
+                                exit 1
+                            }
+
+                            if (-not $response.trackingId) {
+                                Write-Error "QMetry did not return a tracking ID."
+                                exit 1
+                            }
+
+                            $response | ConvertTo-Json -Depth 10 |
+                                Out-File `
+                                "newman-reports\\qmetry-upload-response.json" `
+                                -Encoding utf8
+
+                            $response.url |
+                                Out-File `
+                                "newman-reports\\qmetry-upload-url.txt" `
+                                -Encoding ascii
+
+                            $response.trackingId |
+                                Out-File `
+                                "newman-reports\\qmetry-tracking-id.txt" `
+                                -Encoding ascii
+
+                            Write-Host "QMetry upload URL received successfully."
+                            Write-Host "QMetry tracking ID received successfully."
                         }
 
-                        if (-not $response.trackingId) {
-                            Write-Error "QMetry did not return a tracking ID."
+                        catch {
+
+                            Write-Host "=========================================="
+                            Write-Host "QMetry API returned an error"
+                            Write-Host "=========================================="
+
+                            Write-Host "HTTP Error:"
+                            Write-Host $_.Exception.Message
+
+                            if ($_.Exception.Response) {
+
+                                try {
+
+                                    $reader = New-Object `
+                                        System.IO.StreamReader(
+                                            $_.Exception.Response.GetResponseStream()
+                                        )
+
+                                    $errorBody = $reader.ReadToEnd()
+
+                                    Write-Host ""
+                                    Write-Host "QMetry Response Body:"
+                                    Write-Host $errorBody
+                                    Write-Host ""
+
+                                }
+                                catch {
+
+                                    Write-Host "Could not read QMetry error response body."
+                                }
+                            }
+
                             exit 1
                         }
-
-                        $response | ConvertTo-Json -Depth 10 |
-                            Out-File "newman-reports\\qmetry-upload-response.json" -Encoding utf8
-
-                        $response.url |
-                            Out-File "newman-reports\\qmetry-upload-url.txt" -Encoding ascii
-
-                        $response.trackingId |
-                            Out-File "newman-reports\\qmetry-tracking-id.txt" -Encoding ascii
-
-                        Write-Host "QMetry upload URL received."
-                        Write-Host "QMetry tracking ID received."
                     '''
                 }
             }
@@ -121,9 +161,11 @@ pipeline {
                 ]) {
 
                     powershell '''
-                        $trackingId = (Get-Content `
-                            "newman-reports\\qmetry-tracking-id.txt" `
-                            -Raw).Trim()
+                        $trackingId = (
+                            Get-Content `
+                                "newman-reports\\qmetry-tracking-id.txt" `
+                                -Raw
+                        ).Trim()
 
                         $trackingUrl = `
                             "https://qtmcloud.qmetry.com/rest/api/automation/importresult/track?trackingId=$trackingId"
@@ -141,51 +183,67 @@ pipeline {
 
                             $attempt++
 
-                            $response = Invoke-RestMethod `
-                                -Uri $trackingUrl `
-                                -Method GET `
-                                -Headers $headers `
-                                -ContentType "application/json"
+                            try {
 
-                            Write-Host "Attempt $attempt"
-                            Write-Host "Process Status: $($response.processStatus)"
-                            Write-Host "Import Status: $($response.importStatus)"
+                                $response = Invoke-RestMethod `
+                                    -Uri $trackingUrl `
+                                    -Method GET `
+                                    -Headers $headers `
+                                    -ContentType "application/json"
 
-                            if ($response.importStatus -eq "SUCCESS") {
-
-                                Write-Host "======================================"
-                                Write-Host "QMetry import completed successfully."
-                                Write-Host "======================================"
+                                Write-Host ""
+                                Write-Host "Attempt: $attempt"
+                                Write-Host "Process Status: $($response.processStatus)"
+                                Write-Host "Import Status: $($response.importStatus)"
+                                Write-Host ""
 
                                 $response | ConvertTo-Json -Depth 10 |
                                     Out-File `
                                     "newman-reports\\qmetry-import-status.json" `
                                     -Encoding utf8
 
-                                exit 0
+                                if ($response.importStatus -eq "SUCCESS") {
+
+                                    Write-Host "=========================================="
+                                    Write-Host "QMetry import completed successfully."
+                                    Write-Host "=========================================="
+
+                                    exit 0
+                                }
+
+                                if ($response.importStatus -eq "FAILED") {
+
+                                    Write-Host "=========================================="
+                                    Write-Host "QMetry import FAILED."
+                                    Write-Host "=========================================="
+
+                                    if ($response.detailedMessage) {
+                                        Write-Host "Details:"
+                                        Write-Host $response.detailedMessage
+                                    }
+
+                                    exit 1
+                                }
+
                             }
 
-                            if ($response.importStatus -eq "FAILED") {
+                            catch {
 
-                                $response | ConvertTo-Json -Depth 10 |
-                                    Out-File `
-                                    "newman-reports\\qmetry-import-status.json" `
-                                    -Encoding utf8
-
-                                Write-Error "QMetry import FAILED."
-
-                                if ($response.detailedMessage) {
-                                    Write-Error $response.detailedMessage
-                                }
+                                Write-Host "Error while checking QMetry status:"
+                                Write-Host $_.Exception.Message
 
                                 exit 1
                             }
 
+                            Write-Host "Import still in progress. Waiting 5 seconds..."
+
                             Start-Sleep -Seconds 5
 
-                        } while ($attempt -lt $maxAttempts)
+                        }
+                        while ($attempt -lt $maxAttempts)
 
-                        Write-Error "QMetry import did not complete within the expected time."
+                        Write-Error `
+                            "QMetry import did not complete within the expected time."
 
                         exit 1
                     '''
